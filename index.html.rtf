@@ -1,0 +1,186 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!DOCTYPE html>\
+<html lang="en">\
+<head>\
+<meta charset="UTF-8">\
+<title>Alpha Sigma Phi GPA System</title>\
+\
+<style>\
+body \{\
+    margin: 0;\
+    font-family: Arial, sans-serif;\
+    background-color: #f2f2f2;\
+\}\
+\
+header \{\
+    background-color: #8B0000;\
+    color: white;\
+    padding: 25px;\
+    text-align: center;\
+    font-size: 32px;\
+    font-weight: bold;\
+    letter-spacing: 2px;\
+\}\
+\
+.container \{\
+    max-width: 800px;\
+    margin: 40px auto;\
+    background: white;\
+    padding: 30px;\
+    border-radius: 10px;\
+\}\
+\
+label \{ font-weight: bold; \}\
+input, select \{\
+    width: 100%;\
+    padding: 8px;\
+    margin-top: 5px;\
+\}\
+\
+button \{\
+    margin-top: 15px;\
+    padding: 10px;\
+    width: 100%;\
+    font-size: 16px;\
+    background-color: #8B0000;\
+    color: white;\
+    border: none;\
+    border-radius: 5px;\
+    cursor: pointer;\
+\}\
+\
+.member \{\
+    background: #eee;\
+    padding: 10px;\
+    margin-top: 8px;\
+    border-radius: 5px;\
+\}\
+\
+.good \{ color: green; \}\
+.probation \{ color: red; font-weight: bold; \}\
+\
+.actions button \{\
+    margin-top: 5px;\
+    background-color: #555;\
+\}\
+</style>\
+</head>\
+\
+<body>\
+\
+<header>Alpha Sigma Phi</header>\
+\
+<div class="container">\
+<h2>Member GPA Entry</h2>\
+\
+<label>Member Name</label>\
+<input id="name">\
+\
+<div id="classes"></div>\
+\
+<button onclick="saveMember()">Save Member</button>\
+\
+<h3>Saved Members</h3>\
+<button onclick="exportCSV()">Export to Excel</button>\
+<div id="list"></div>\
+</div>\
+\
+<script>\
+// ====== CONFIG ======\
+const PASSWORD = "alphasig";   // CHANGE THIS\
+const GPA_CUTOFF = 2.5;\
+// ====================\
+\
+const scale = \{\
+"A":4,"A-":3.7,"B+":3.3,"B":3,"B-":2.7,\
+"C+":2.3,"C":2,"C-":1.7,"D":1,"F":0\
+\};\
+\
+if (prompt("Officer Password:") !== PASSWORD) \{\
+    document.body.innerHTML = "<h1 style='text-align:center'>Access Denied</h1>";\
+\}\
+\
+const classDiv = document.getElementById("classes");\
+for (let i=1;i<=7;i++)\{\
+    let s = `<label>Class $\{i\}</label><select class="grade">\
+    <option value="">--</option>`;\
+    for (let g in scale) s += `<option>$\{g\}</option>`;\
+    s += "</select>";\
+    classDiv.innerHTML += s;\
+\}\
+\
+function saveMember()\{\
+    let name = document.getElementById("name").value.trim();\
+    if (!name) return alert("Enter a name");\
+\
+    let total=0,count=0;\
+    document.querySelectorAll(".grade").forEach(s=>\{\
+        if(s.value)\{ total+=scale[s.value]; count++; \}\
+    \});\
+\
+    if(!count) return alert("Enter grades");\
+\
+    let gpa=(total/count).toFixed(2);\
+    let members=JSON.parse(localStorage.members||"[]");\
+    members.push(\{name,gpa\});\
+    localStorage.members=JSON.stringify(members);\
+    render();\
+\}\
+\
+function render()\{\
+    let list=document.getElementById("list");\
+    list.innerHTML="";\
+    let members=JSON.parse(localStorage.members||"[]");\
+\
+    members.forEach((m,i)=>\{\
+        let status=m.gpa<GPA_CUTOFF?"Probation":"Good Standing";\
+        let cls=m.gpa<GPA_CUTOFF?"probation":"good";\
+        list.innerHTML+=`\
+        <div class="member">\
+        <b>$\{m.name\}</b> \'97 GPA: $\{m.gpa\}\
+        <span class="$\{cls\}">($\{status\})</span>\
+        <div class="actions">\
+        <button onclick="edit($\{i\})">Edit</button>\
+        <button onclick="del($\{i\})">Delete</button>\
+        </div>\
+        </div>`;\
+    \});\
+\}\
+\
+function del(i)\{\
+    let m=JSON.parse(localStorage.members);\
+    m.splice(i,1);\
+    localStorage.members=JSON.stringify(m);\
+    render();\
+\}\
+\
+function edit(i)\{\
+    let m=JSON.parse(localStorage.members);\
+    let g=prompt("New GPA:",m[i].gpa);\
+    if(g)\{ m[i].gpa=g; localStorage.members=JSON.stringify(m); render(); \}\
+\}\
+\
+function exportCSV()\{\
+    let m=JSON.parse(localStorage.members||"[]");\
+    let csv="Name,GPA,Status\\n";\
+    m.forEach(x=>\{\
+        csv+=`$\{x.name\},$\{x.gpa\},$\{x.gpa<GPA_CUTOFF?"Probation":"Good"\}\\n`;\
+    \});\
+    let a=document.createElement("a");\
+    a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);\
+    a.download="alpha_sigma_phi_gpa.csv";\
+    a.click();\
+\}\
+\
+render();\
+</script>\
+\
+</body>\
+</html>\
+}
